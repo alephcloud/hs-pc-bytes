@@ -202,7 +202,7 @@ pListL p = (eof *> pure []) <|> ((:) <$> p <*> pListL p) <?> "pListL"
 pTake ∷ ByteArray α ⇒ Int → Parser α α
 pTake i = Parser $ \a → if i ≤ length a
     then first Right $ splitAt i a
-    else (Left "input to short", a)
+    else (Left "input too short", a)
 
 pTakeBytes ∷ (Bytes α) ⇒ Int → Parser (ByteArrayImpl α) α
 pTakeBytes i = pEither fromBytes (pTake i)
@@ -216,7 +216,7 @@ pTakeL = pEither fromBytes $ pTake (toInt (Proxy ∷ Proxy n))
 pTakeExcept ∷ ByteArray π ⇒ Int → Parser π π
 pTakeExcept i =  Parser $ \a → if i ≤ length a
     then first Right $ splitAtEnd i a
-    else (Left "input to short", a)
+    else (Left "input too short", a)
 
 pTakeExceptBytes ∷ (Bytes α) ⇒ Int → Parser (ByteArrayImpl α) α
 pTakeExceptBytes i = pEither fromBytes (pTakeExcept i)
