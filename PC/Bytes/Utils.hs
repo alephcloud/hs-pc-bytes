@@ -294,3 +294,10 @@ instance ByteArray π ⇒ Alternative (Parser π) where
         (Left s, _) → case unBAP b x of
             r'@(Right {}, _) → r'
             (Left s', t) → (Left ("[" ⊕ s ⊕ "," ⊕ s' ⊕ "]"), t)
+
+instance ByteArray x => Monad (Parser x) where
+    return  = pure
+    a >>= b = Parser $ \x ->
+        case unBAP a x of
+            (Right r, bs') -> unBAP (b r) bs'
+            (Left v, bs')  -> (Left v, bs')
