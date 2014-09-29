@@ -48,15 +48,14 @@ import PC.Bytes.ByteArray
 
 import GHC.TypeLits
 
-type BackendByteArrayL = ByteArrayL BackendByteArray
+type BackendByteArrayL = ByteArrayL
 
 -- -------------------------------------------------------------------------- --
 
-newtype ByteArrayL α (n ∷ Nat) = ByteArrayL α
+newtype ByteArrayL (n ∷ Nat) = ByteArrayL BackendByteArray
     deriving (Eq, Ord, Show, Code16, Code64)
 
-instance (ByteArray α, KnownNat n) ⇒ Bytes (ByteArrayL α n) where
-    type ByteArrayImpl (ByteArrayL α n) = α
+instance KnownNat n ⇒ Bytes (ByteArrayL n) where
     toBytes (ByteArrayL bytes) = bytes
     fromBytes a = ByteArrayL <$> (check =<< Right a)
         where
@@ -94,73 +93,73 @@ type (≤) α β = (<=) α β
 
 lengthL
     ∷ ∀ β n . KnownNat n
-    ⇒ ByteArrayL β n
+    ⇒ ByteArrayL n
     → Int
 lengthL _ = toInt (Proxy ∷ Proxy n)
 {-# INLINEABLE lengthL #-}
 
-emptyL ∷ ByteArray β ⇒ ByteArrayL β 0
+emptyL ∷ ByteArrayL 0
 emptyL = ByteArrayL empty
 {-# INLINABLE emptyL #-}
 
 randomBytesL
-    ∷ ∀ β ν . (KnownNat ν, ByteArray β)
-    ⇒ IO (ByteArrayL β ν)
+    ∷ ∀ ν . (KnownNat ν)
+    ⇒ IO (ByteArrayL ν)
 randomBytesL = ByteArrayL <$> randomBytes (toInt (Proxy ∷ Proxy ν))
 {-# INLINABLE randomBytesL #-}
 
 dropL
-    ∷ ∀ β i m n proxy. (KnownNat i, ByteArray β, i ≤ m, (m - i) ~ n)
+    ∷ ∀ i m n proxy. (KnownNat i, i ≤ m, (m - i) ~ n)
     ⇒ proxy i
-    → ByteArrayL β m
-    → ByteArrayL β n
+    → ByteArrayL m
+    → ByteArrayL n
 dropL i (ByteArrayL a) = ByteArrayL $ drop (toInt i) a
 {-# INLINEABLE dropL #-}
 
 dropEndL
-    ∷ ∀ β i m n proxy. (KnownNat i, ByteArray β, i ≤ m, (m - i) ~ n)
+    ∷ ∀ i m n proxy. (KnownNat i, i ≤ m, (m - i) ~ n)
     ⇒ proxy i
-    → ByteArrayL β m
-    → ByteArrayL β n
+    → ByteArrayL m
+    → ByteArrayL n
 dropEndL i (ByteArrayL a) = ByteArrayL $ dropEnd (toInt i) a
 {-# INLINEABLE dropEndL #-}
 
 takeL
-    ∷ ∀ β m n. (KnownNat n, ByteArray β, n ≤ m)
-    ⇒ ByteArrayL β m
-    → ByteArrayL β n
+    ∷ ∀ m n. (KnownNat n, n ≤ m)
+    ⇒ ByteArrayL m
+    → ByteArrayL n
 takeL (ByteArrayL a) = ByteArrayL $ take (toInt (Proxy ∷ Proxy n)) a
 {-# INLINEABLE takeL #-}
 
 takeEndL
-    ∷ ∀ β m n. (KnownNat n, ByteArray β, n ≤ m)
-    ⇒ ByteArrayL β m
-    → ByteArrayL β n
+    ∷ ∀ m n. (KnownNat n, n ≤ m)
+    ⇒ ByteArrayL m
+    → ByteArrayL n
 takeEndL (ByteArrayL a) = ByteArrayL $ takeEnd (toInt (Proxy ∷ Proxy n)) a
 {-# INLINEABLE takeEndL #-}
 
 splitL
-    ∷ ∀ β m n o. (KnownNat n, ByteArray β, n ≤ m, (m - n) ~ o)
-    ⇒ ByteArrayL β m
-    → (ByteArrayL β n, ByteArrayL β o)
+    ∷ ∀ m n o. (KnownNat n, n ≤ m, (m - n) ~ o)
+    ⇒ ByteArrayL m
+    → (ByteArrayL n, ByteArrayL o)
 splitL (ByteArrayL a) = (ByteArrayL *** ByteArrayL) $ splitAt (toInt (Proxy ∷ Proxy n)) a
 {-# INLINABLE splitL #-}
 
 concatL
-    ∷ (ByteArray β, (m + n) ~ x)
-    ⇒ ByteArrayL β m
-    → ByteArrayL β n
-    → ByteArrayL β x
+    ∷ ((m + n) ~ x)
+    ⇒ ByteArrayL m
+    → ByteArrayL n
+    → ByteArrayL x
 concatL (ByteArrayL a) (ByteArrayL b) = ByteArrayL $ a ⊕ b
 {-# INLINABLE concatL #-}
 
 class (Bytes α) ⇒ BytesL α where
     type ByteLengthL α ∷ Nat
-    toBytesL ∷ α → ByteArrayL (ByteArrayImpl α) (ByteLengthL α)
-    fromBytesL ∷ ByteArrayL (ByteArrayImpl α) (ByteLengthL α) → Either String α
+    toBytesL ∷ α → ByteArrayL (ByteLengthL α)
+    fromBytesL ∷ ByteArrayL (ByteLengthL α) → Either String α
 
-instance (KnownNat n, ByteArray α) ⇒ BytesL (ByteArrayL α n) where
-    type ByteLengthL (ByteArrayL α n) = n
+instance KnownNat n ⇒ BytesL (ByteArrayL n) where
+    type ByteLengthL (ByteArrayL n) = n
     toBytesL = id
     fromBytesL = Right
 
@@ -168,8 +167,8 @@ instance (KnownNat n, ByteArray α) ⇒ BytesL (ByteArrayL α n) where
     {-# INLINABLE fromBytesL #-}
 
 -- TODO:
-{-# SPECIALIZE lengthL ∷ ∀ n . KnownNat n ⇒ ByteArrayL BackendByteArray n → Int #-}
-{-# SPECIALIZE emptyL ∷ ByteArrayL BackendByteArray 0 #-}
+{-# SPECIALIZE lengthL ∷ ∀ n . KnownNat n ⇒ ByteArrayL n → Int #-}
+{-# SPECIALIZE emptyL ∷ ByteArrayL 0 #-}
 -- NOTE SPECIALIZE should be RULES now (vhanquez)
 
 {-

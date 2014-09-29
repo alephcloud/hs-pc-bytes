@@ -83,10 +83,10 @@ import PC.Bytes.ByteArrayL
 --
 -- FIXME Make this a type class and avoid the partial function!
 --
-unsafeFromBytes ∷ ∀ α . Bytes α ⇒ ByteArrayImpl α → α
+unsafeFromBytes ∷ ∀ α . Bytes α ⇒ BackendByteArray → α
 unsafeFromBytes = either (\e → error $ "Failed to interpret bitArray. This is a bug in the code: " ⊕ e) id ∘ fromBytes
 
-unsafeFromBytesL ∷ ∀ α . (BytesL α) ⇒ ByteArrayL (ByteArrayImpl α) (ByteLengthL α) → α
+unsafeFromBytesL ∷ ∀ α . (BytesL α) ⇒ ByteArrayL (ByteLengthL α) → α
 unsafeFromBytesL = either error id ∘ fromBytesL
 
 -- | pad a ByteArray on the left
@@ -181,44 +181,44 @@ type family HalfC1 (x ∷ Ordering) (n ∷ Nat) (l ∷ Nat) ∷ Nat where
 --
 -- The type-parameter is the underlying ByteArray implementation.
 --
-newtype Parser π α = Parser { unBAP ∷ π → (Either String α, π) }
+newtype Parser α = Parser { unBAP ∷ BackendByteArray → (Either String α, BackendByteArray) }
 
-pEither ∷ ∀ π α β . ByteArray π ⇒ (α → Either String β) → Parser π α → Parser π β
-pEither f p = Parser $ \(a ∷ π) → case (unBAP p) a of
+pEither ∷ (α → Either String β) → Parser α → Parser β
+pEither f p = Parser $ \(a ∷ BackendByteArray) → case (unBAP p) a of
     (Right r, a') → case f r of
         Right r' → (Right r', a')
         Left e → (Left e, a)
     (Left e, _) → (Left e, a)
 
-pAssert ∷ ByteArray π ⇒ String → (α → Bool) → Parser π α → Parser π α
+pAssert ∷ String → (α → Bool) → Parser α → Parser α
 pAssert msg f = pEither $ \a → if f a then Right a else Left msg
 
 -- | Consumes remaining input into a list of
 -- values parsed by the given parser.
 --
-pListL ∷ ByteArray π ⇒ Parser π α → Parser π [α]
+pListL ∷ ByteArray BackendByteArray ⇒ Parser α → Parser [α]
 pListL p = (eof *> pure []) <|> ((:) <$> p <*> pListL p) <?> "pListL"
 
-pTake ∷ ByteArray α ⇒ Int → Parser α α
+pTake ∷ Int → Parser BackendByteArray
 pTake i = Parser $ \a → if i ≤ length a
     then first Right $ splitAt i a
     else (Left "input too short", a)
 
-pTakeBytes ∷ (Bytes α) ⇒ Int → Parser (ByteArrayImpl α) α
+pTakeBytes ∷ Bytes α ⇒ Int → Parser α
 pTakeBytes i = pEither fromBytes (pTake i)
 
-pTakeBytesL ∷ ∀ α . (KnownNat (ByteLengthL α), BytesL α) ⇒ Parser (ByteArrayImpl α) α
-pTakeBytesL = pEither fromBytesL (pTakeL ∷ Parser (ByteArrayImpl α) (ByteArrayL (ByteArrayImpl α) (ByteLengthL α)))
+pTakeBytesL ∷ ∀ α . (KnownNat (ByteLengthL α), BytesL α) ⇒ Parser α
+pTakeBytesL = pEither fromBytesL (pTakeL ∷ Parser (ByteArrayL (ByteLengthL α)))
 
-pTakeL ∷ ∀ α n . (KnownNat n, ByteArray α) ⇒ Parser α (ByteArrayL α n)
+pTakeL ∷ ∀ n . KnownNat n ⇒ Parser (ByteArrayL n)
 pTakeL = pEither fromBytes $ pTake (toInt (Proxy ∷ Proxy n))
 
-pTakeExcept ∷ ByteArray π ⇒ Int → Parser π π
+pTakeExcept ∷ Int → Parser BackendByteArray
 pTakeExcept i =  Parser $ \a → if i ≤ length a
     then first Right $ splitAtEnd i a
     else (Left "input too short", a)
 
-pTakeExceptBytes ∷ (Bytes α) ⇒ Int → Parser (ByteArrayImpl α) α
+pTakeExceptBytes ∷ (Bytes α) ⇒ Int → Parser α
 pTakeExceptBytes i = pEither fromBytes (pTakeExcept i)
 
 -- | This parser returns the length of the remaining input.
@@ -227,7 +227,7 @@ pTakeExceptBytes i = pEither fromBytes (pTakeExcept i)
 -- Depending on the implementation of 'BackendByteArray' this
 -- may not always terminate.
 --
-pRemaining ∷ ∀ π . ByteArray π ⇒ Parser π Int
+pRemaining ∷ Parser Int
 pRemaining = Parser $ \a → (Right $ length a, a)
 
 -- | This parser returns all remaining input.
@@ -235,7 +235,7 @@ pRemaining = Parser $ \a → (Right $ length a, a)
 -- Depending on the implementation of 'ByteArray' this
 -- may not always terminate.
 --
-pTakeAll ∷ ByteArray α ⇒ Parser α α
+pTakeAll ∷ Parser BackendByteArray
 pTakeAll = Parser $ \a → (Right a, empty)
 
 -- | This parser applies 'fromBytes' on all remaining input
@@ -243,11 +243,11 @@ pTakeAll = Parser $ \a → (Right a, empty)
 -- Depending on the implementation of 'ByteArray' this
 -- may not always terminate.
 --
-pTakeAllBytes ∷ (Bytes α) ⇒ Parser (ByteArrayImpl α) α
+pTakeAllBytes ∷ Bytes α ⇒ Parser α
 pTakeAllBytes = pEither fromBytes pTakeAll
 
-(<?>) ∷ ∀ π α . ByteArray π ⇒ Parser π α → String → Parser π α
-(<?>) p s = Parser $ \(a ∷ π) → case (unBAP p) a of
+(<?>) ∷ Parser α → String → Parser α
+(<?>) p s = Parser $ \(a ∷ BackendByteArray) → case (unBAP p) a of
     (Left e, _) → (Left ("in " ⊕ s ⊕ ": " ⊕  e), a)
     x → x
 
@@ -255,20 +255,20 @@ infixl 3 <?>
 
 -- | This parser consumes no input. It never fails.
 --
-isEof ∷ ByteArray π ⇒ Parser π Bool
+isEof ∷ Parser Bool
 isEof = Parser $ \case
     a | length a ≡ 0 → (Right True, a)
       | otherwise → (Right False, a)
 
-eof ∷ ByteArray π ⇒ Parser π ()
+eof ∷ Parser ()
 eof = Parser $ \case
     a| length a ≡ 0 → (Right (), a)
      | otherwise → (Left ("eof: remaining input: " ⊕ to16 a), a)
 
-parse ∷ (Code16 π, ByteArray π) ⇒ Parser π α → π → Either String α
+parse ∷ Parser α → BackendByteArray → Either String α
 parse = parse' ""
 
-parse' ∷ (Code16 π, ByteArray π) ⇒ String → Parser π α → π → Either String α
+parse' ∷ String → Parser α → BackendByteArray → Either String α
 parse' s (Parser p) a = case p a of
     (Right r, a') → if length a' ≡ 0
         then Right r
@@ -277,17 +277,17 @@ parse' s (Parser p) a = case p a of
   where
     ss = if s ≡ "" then "" else " " ⊕ s
 
-instance ByteArray π ⇒ Functor (Parser π) where
+instance Functor Parser where
     fmap f (Parser p) = Parser $ first (fmap f) ∘ p
 
-instance ByteArray π ⇒ Applicative (Parser π) where
+instance Applicative Parser where
     pure x = Parser $ \a → (Right x, a)
     (Parser p0) <*> (Parser p1) = Parser $ \a →
         case p0 a of
             (Left l, _) → (Left l, a)
             (Right r, a') → first (fmap r) $ (p1 a')
 
-instance ByteArray π ⇒ Alternative (Parser π) where
+instance Alternative Parser where
     empty = Parser $ \s → (Left "empty", s)
     (<|>) a b = Parser $ \x → case unBAP a x of
         r@(Right {}, _) → r
@@ -295,7 +295,7 @@ instance ByteArray π ⇒ Alternative (Parser π) where
             r'@(Right {}, _) → r'
             (Left s', t) → (Left ("[" ⊕ s ⊕ "," ⊕ s' ⊕ "]"), t)
 
-instance ByteArray x => Monad (Parser x) where
+instance Monad Parser where
     return  = pure
     a >>= b = Parser $ \x ->
         case unBAP a x of

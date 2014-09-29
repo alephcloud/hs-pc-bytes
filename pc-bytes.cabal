@@ -3,7 +3,7 @@
 -- ------------------------------------------------------ --
 
 Name:                pc-bytes
-Version:             0.2.1
+Version:             0.3.0
 Synopsis:            Alephcloud Crypto Library
 description:
     Twc Crypto Library
