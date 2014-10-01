@@ -11,6 +11,7 @@
 module PC.Bytes.ByteArray
 ( ByteArray(..)
 , Bytes(..)
+, FromBytesSafe(..)
 , BackendByteArray
 , module PC.Bytes.Codec
 ) where
@@ -85,6 +86,13 @@ class (Eq α, Ord α, Monoid α, Code64 α, Code16 α) ⇒ ByteArray α where
 class Bytes α where
     toBytes ∷ α → BackendByteArray
     fromBytes ∷ BackendByteArray → Either String α
+
+-- | Object that can be converted to a type from a bytestring without failing.
+--
+-- this is useful for instances of objects that are just newtype of bytestring
+-- and don't have any length or content constraint (type-wise). e.g. Password
+class FromBytesSafe a where
+    fromBytesSafe :: BackendByteArray -> a
 
 type BackendByteArray = ByteString
 
