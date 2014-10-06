@@ -92,7 +92,7 @@ instance (Nat n, Code16 α, ByteArray α) ⇒ Code16 (ByteArrayL α n) where
 type (≤) α β = (<=) α β
 
 lengthL
-    ∷ ∀ β n . KnownNat n
+    ∷ ∀ n . KnownNat n
     ⇒ ByteArrayL n
     → Int
 lengthL _ = toInt (Proxy ∷ Proxy n)
