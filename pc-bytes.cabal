@@ -27,6 +27,7 @@ Library
       PC.Bytes.ByteArrayL
       PC.Bytes.Codec
       PC.Bytes.Utils
+      PC.Bytes.Random
 
   build-depends:
       integer-gmp,

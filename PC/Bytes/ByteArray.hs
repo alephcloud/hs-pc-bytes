@@ -38,6 +38,7 @@ import Prelude hiding (splitAt, length, take, drop)
 import Prelude.Unicode
 
 import PC.Bytes.Codec
+import PC.Bytes.Random
 
 -- | The class of ByteArrays for usage with
 -- cryptographic ciphers.
@@ -112,9 +113,7 @@ instance ByteArray B.ByteString where
     {-# INLINABLE fromList #-}
     {-# INLINABLE toList #-}
 
-    randomBytes i = liftIO $ do
-        rng ← cprgCreate <$> createEntropyPool ∷ IO SystemRNG
-        return $ fst ∘ cprgGenerate i $ rng
+    randomBytes i = liftIO $ getRandom i
 
 instance Bytes B.ByteString where
     toBytes = id
