@@ -4,9 +4,8 @@
 
 Name:                pc-bytes
 Version:             0.3.0
-Synopsis:            Alephcloud Crypto Library
-description:
-    Twc Crypto Library
+Synopsis:            Byte Array abstractions and utility
+description:         simple ByteArray, ByteArrayL, and some parsers
 Homepage:            https://github.com/alephcloud/hs-pc-bytes
 License:             AllRightsReserved
 License-file:        LICENSE
