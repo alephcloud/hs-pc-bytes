@@ -37,6 +37,7 @@ module PC.Bytes.ByteArrayL
 
 import Control.Applicative hiding (empty)
 import Control.Arrow
+import Control.DeepSeq (NFData)
 import Control.Monad
 
 import Data.Monoid.Unicode
@@ -54,7 +55,7 @@ type BackendByteArrayL = ByteArrayL
 -- -------------------------------------------------------------------------- --
 
 newtype ByteArrayL (n ∷ Nat) = ByteArrayL BackendByteArray
-    deriving (Eq, Ord, Show, Code16, Code64)
+    deriving (Eq, Ord, Show, Code16, Code64, NFData)
 
 instance KnownNat n ⇒ Bytes (ByteArrayL n) where
     toBytes (ByteArrayL bytes) = bytes
