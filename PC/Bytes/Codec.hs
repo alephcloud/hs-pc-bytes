@@ -6,8 +6,6 @@
 -- The intellectual property and technical concepts contained herein are
 -- proprietary to PivotCloud and are protected by U.S. and Foreign law.
 
-{-# LANGUAGE UnicodeSyntax #-}
-
 module PC.Bytes.Codec
 ( Code64(..)
 , Code16(..)

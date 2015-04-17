@@ -6,11 +6,9 @@
 -- The intellectual property and technical concepts contained herein are
 -- proprietary to PivotCloud and are protected by U.S. and Foreign law.
 
-{-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE CPP #-}
 
 module PC.Bytes.ByteArray
 ( ByteArray(..)
