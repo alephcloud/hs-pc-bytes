@@ -12,17 +12,12 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module PC.Bytes.Utils
 ( unsafeFromBytes
@@ -58,9 +53,9 @@ import Control.Applicative hiding (empty)
 import qualified Control.Applicative as AP
 import Control.Arrow hiding (left, right)
 
-import Data.Monoid.Unicode
 import Data.Proxy
 import Data.Word (Word8)
+import Data.Monoid
 
 import GHC.TypeLits
 
@@ -88,7 +83,7 @@ import PC.Bytes.ByteArrayL
 -- FIXME Make this a type class and avoid the partial function!
 --
 unsafeFromBytes ∷ ∀ α . Bytes α ⇒ BackendByteArray → α
-unsafeFromBytes = either (\e → error $ "Failed to interpret bitArray. This is a bug in the code: " ⊕ e) id ∘ fromBytes
+unsafeFromBytes = either (\e → error $ "Failed to interpret bitArray. This is a bug in the code: " ++ e) id ∘ fromBytes
 
 unsafeFromBytesL ∷ ∀ α . (BytesL α) ⇒ ByteArrayL (ByteLengthL α) → α
 unsafeFromBytesL = either error id ∘ fromBytesL
@@ -99,7 +94,7 @@ unsafeFromBytesL = either error id ∘ fromBytesL
 --
 padLeft ∷ ByteArray α ⇒ Word8 → Int → α → α
 padLeft a i b
-    | (length b) < i = fromList (replicate (i - length b) a) ⊕ b
+    | (length b) < i = fromList (replicate (i - length b) a) `mappend` b
     | otherwise = b
 
 (%)
@@ -252,7 +247,7 @@ pTakeAllBytes = pEither fromBytes pTakeAll
 
 (<?>) ∷ Parser α → String → Parser α
 (<?>) p s = Parser $ \(a ∷ BackendByteArray) → case (unBAP p) a of
-    (Left e, _) → (Left ("in " ⊕ s ⊕ ": " ⊕  e), a)
+    (Left e, _) → (Left ("in " ++ s ++ ": " ++ e), a)
     x → x
 
 infixl 3 <?>
@@ -267,7 +262,7 @@ isEof = Parser $ \case
 eof ∷ Parser ()
 eof = Parser $ \case
     a| length a ≡ 0 → (Right (), a)
-     | otherwise → (Left ("eof: remaining input: " ⊕ to16 a), a)
+     | otherwise → (Left ("eof: remaining input: " ++ to16 a), a)
 
 parse ∷ Parser α → BackendByteArray → Either String α
 parse = parse' ""
@@ -276,10 +271,10 @@ parse' ∷ String → Parser α → BackendByteArray → Either String α
 parse' s (Parser p) a = case p a of
     (Right r, a') → if length a' ≡ 0
         then Right r
-        else Left $ "failed to consume all input while parsing" ⊕ ss ⊕ "; remaining bytes are: " ⊕ to16 a'
-    (Left e, a') → Left $ "failed to parse" ⊕ ss ⊕ ": " ⊕ e ⊕ ". remaining bytes are: " ⊕ to16 a'
+        else Left $ "failed to consume all input while parsing" ++ ss ++ "; remaining bytes are: " ++ to16 a'
+    (Left e, a') → Left $ "failed to parse" ++ ss ++ ": " ++ e ++ ". remaining bytes are: " ++ to16 a'
   where
-    ss = if s ≡ "" then "" else " " ⊕ s
+    ss = if s ≡ "" then "" else " " ++ s
 
 instance Functor Parser where
     fmap f (Parser p) = Parser $ first (fmap f) ∘ p
@@ -297,7 +292,7 @@ instance Alternative Parser where
         r@(Right {}, _) → r
         (Left s, _) → case unBAP b x of
             r'@(Right {}, _) → r'
-            (Left s', t) → (Left ("[" ⊕ s ⊕ "," ⊕ s' ⊕ "]"), t)
+            (Left s', t) → (Left ("[" ++ s ++ "," ++ s' ++ "]"), t)
 
 instance Monad Parser where
     return  = pure

@@ -41,7 +41,7 @@ import Control.Arrow
 import Control.DeepSeq (NFData)
 import Control.Monad
 
-import Data.Monoid.Unicode
+import Data.Monoid
 import Data.Proxy
 
 import Prelude hiding (splitAt, length, take, drop)
@@ -67,7 +67,7 @@ instance KnownNat n ⇒ Bytes (ByteArrayL n) where
             let l = length x
             if l ≡ toInt (Proxy ∷ Proxy n)
                 then Right x
-                else Left $ "wrong length: expected " ⊕ show e ⊕ " got " ⊕ show l
+                else Left $ "wrong length: expected " ++ show e ++ " got " ++ show l
 
     -- Allows specialization elsewhere
     {-# INLINEABLE toBytes #-}
@@ -153,7 +153,7 @@ concatL
     ⇒ ByteArrayL m
     → ByteArrayL n
     → ByteArrayL x
-concatL (ByteArrayL a) (ByteArrayL b) = ByteArrayL $ a ⊕ b
+concatL (ByteArrayL a) (ByteArrayL b) = ByteArrayL $ a `mappend` b
 {-# INLINABLE concatL #-}
 
 class (Bytes α) ⇒ BytesL α where
@@ -206,7 +206,7 @@ splitAtEndL ∷ ∀ m n i . ((n + i) ~ m) ⇒ Sing i → ByteArrayL (n ∷ Nat) 
 splitAtEndL i (ByteArrayL a) = (ByteArrayL *** ByteArrayL) $ splitAtEnd (fromIntegral (fromSing i)) a
 
 concatL ∷ ∀ m n o . (SingI n, SingI m, SingI (n + m), (n + m) ~ o) ⇒ ByteArrayL m → ByteArrayL n → ByteArrayL o
-concatL (ByteArrayL a) (ByteArrayL b) = ByteArrayL $ a ⊕ b
+concatL (ByteArrayL a) (ByteArrayL b) = ByteArrayL $ a `mappend` b
 
 -- test
 empty2 ∷ ByteArrayL 0

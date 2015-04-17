@@ -35,7 +35,6 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Base64.URL as B64
-import Data.Monoid.Unicode
 import qualified Data.List as L
 
 import Prelude hiding (splitAt, length, take, drop)
@@ -156,4 +155,4 @@ urlEncode64 = fst . B8.spanEnd (≡ '=') . B64.encode
 urlDecode64 ∷ B.ByteString → Either String B.ByteString
 urlDecode64 s = let l = B.length s
                     x = l `mod` 4
-                in  B64.decode $ s ⊕ B8.replicate (4 - if x ≡ 0 then 4 else x) '='
+                in  B64.decode (s `mappend` B8.replicate (4 - if x ≡ 0 then 4 else x) '=')
