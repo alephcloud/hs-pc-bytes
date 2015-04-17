@@ -21,22 +21,15 @@ module PC.Bytes.ByteArray
     , fromBytesBase16
     ) where
 
-import Control.Applicative hiding (empty)
 import Control.Monad.IO.Class
-
-import Crypto.Random
 
 import Data.ByteString (ByteString)
 import Data.Monoid
 import Data.Word
 
-import qualified Data.ByteString.Base16 as B16
-import qualified Data.ByteString.Base64.URL as B64
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.List as L
 
 import Prelude hiding (splitAt, length, take, drop)
 
@@ -140,14 +133,3 @@ instance Bytes B.ByteString where
 instance Bytes T.Text where
     toBytes = T.encodeUtf8
     fromBytes = either (Left . show) Right . T.decodeUtf8'
-
--- -------------------------------------------------------------------------- --
--- ** Utils
-
-urlEncode64 :: B.ByteString -> B.ByteString
-urlEncode64 = fst . B8.spanEnd (== '=') . to64
-
-urlDecode64 :: B.ByteString -> Either String B.ByteString
-urlDecode64 s = let l = B.length s
-                    x = l `mod` 4
-                in  from64 (s `mappend` B8.replicate (4 - if x == 0 then 4 else x) '=')

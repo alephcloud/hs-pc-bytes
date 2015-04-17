@@ -22,6 +22,5 @@ module PC.Bytes
     ) where
 
 import PC.Bytes.ByteArray
-import PC.Bytes.Codec
 import PC.Bytes.Random
 import Data.ByteString (ByteString)

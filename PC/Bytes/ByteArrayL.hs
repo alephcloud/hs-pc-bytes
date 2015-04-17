@@ -151,5 +151,5 @@ instance KnownNat n => BytesL (ByteArrayL n) where
 
 -- TODO:
 {-# SPECIALIZE lengthL :: forall n . KnownNat n => ByteArrayL n -> Int #-}
-{-# SPECIALIZE emptyL :: ByteArrayL 0 #-}
+-- {-# SPECIALIZE emptyL :: ByteArrayL 0 #-}
 -- NOTE SPECIALIZE should be RULES now (vhanquez)
