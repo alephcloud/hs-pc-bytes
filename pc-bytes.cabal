@@ -18,6 +18,7 @@ source-repository head
 
 Library
   exposed-modules:
+      PC.Bytes
       PC.Bytes.ByteArray
       PC.Bytes.ByteArrayL
       PC.Bytes.Codec

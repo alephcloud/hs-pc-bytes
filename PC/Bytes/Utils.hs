@@ -60,6 +60,7 @@ import GHC.TypeLits
 
 import Prelude hiding (splitAt, length)
 
+import PC.Bytes.Codec
 import PC.Bytes.ByteArray
 import PC.Bytes.ByteArrayL
 
@@ -260,7 +261,7 @@ isEof = Parser $ \case
 eof :: Parser ()
 eof = Parser $ \case
     a| length a == 0 -> (Right (), a)
-     | otherwise -> (Left ("eof: remaining input: " ++ to16 a), a)
+     | otherwise -> (Left ("eof: remaining input: " ++ show (to16 a)), a)
 
 parse :: Parser a -> BackendByteArray -> Either String a
 parse = parse' ""
@@ -269,8 +270,8 @@ parse' :: String -> Parser a -> BackendByteArray -> Either String a
 parse' s (Parser p) a = case p a of
     (Right r, a') -> if length a' == 0
         then Right r
-        else Left $ "failed to consume all input while parsing" ++ ss ++ "; remaining bytes are: " ++ to16 a'
-    (Left e, a') -> Left $ "failed to parse" ++ ss ++ ": " ++ e ++ ". remaining bytes are: " ++ to16 a'
+        else Left $ "failed to consume all input while parsing" ++ ss ++ "; remaining bytes are: " ++ show (to16 a')
+    (Left e, a') -> Left $ "failed to parse" ++ ss ++ ": " ++ e ++ ". remaining bytes are: " ++ show (to16 a')
   where
     ss = if s == "" then "" else " " ++ s
 
