@@ -6,24 +6,28 @@
 -- The intellectual property and technical concepts contained herein are
 -- proprietary to PivotCloud and are protected by U.S. and Foreign law.
 
-{-# LANGUAGE UnicodeSyntax #-}
-
 module PC.Bytes.Codec
-( Code64(..)
-, Code16(..)
-) where
+    ( to16
+    , from16
+    , to64
+    , from64
+    ) where
 
--- -------------------------------------------------------------------------- --
--- * Base64Url serialization
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString               as B
+import qualified Data.ByteString.Base16        as B16
+import qualified Data.ByteString.Base64.URL    as B64
 
-class Code64 α where
-    to64 ∷ α → String
-    from64 ∷ String → Either String α
+to16 :: ByteString -> ByteString
+to16 = B16.encode
 
--- -------------------------------------------------------------------------- --
--- * Hex serialization
+from16 :: ByteString -> Either String ByteString
+from16 b =
+    let (parsed, left) = B16.decode b
+     in if B.null left then Right parsed else Left ("base16 decoding failed: " ++ show left)
 
-class Code16 α where
-    to16 ∷ α → String
-    from16 ∷ String → Either String α
+to64 :: ByteString -> ByteString
+to64 = B64.encode
 
+from64 :: ByteString -> Either String ByteString
+from64 = B64.decode

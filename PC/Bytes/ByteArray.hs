@@ -6,24 +6,22 @@
 -- The intellectual property and technical concepts contained herein are
 -- proprietary to PivotCloud and are protected by U.S. and Foreign law.
 
-{-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE CPP #-}
 
 module PC.Bytes.ByteArray
-( ByteArray(..)
-, Bytes(..)
-, FromBytesSafe(..)
-, BackendByteArray
-, module PC.Bytes.Codec
-) where
+    ( ByteArray(..)
+    , Bytes(..)
+    , FromBytesSafe(..)
+    , BackendByteArray
+    , toBytesBase64
+    , toBytesBase16
+    , fromBytesBase64
+    , fromBytesBase16
+    ) where
 
-import Control.Applicative hiding (empty)
 import Control.Monad.IO.Class
-
-import Crypto.Random
 
 import Data.ByteString (ByteString)
 import Data.Monoid
@@ -32,17 +30,11 @@ import Data.Word
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Base16 as B16
-import qualified Data.ByteString.Base64.URL as B64
-import Data.Monoid.Unicode
-import qualified Data.List as L
 
 import Prelude hiding (splitAt, length, take, drop)
-import Prelude.Unicode
 
-import PC.Bytes.Codec
 import PC.Bytes.Random
+import PC.Bytes.Codec
 
 -- | The class of ByteArrays for usage with
 -- cryptographic ciphers.
@@ -50,27 +42,27 @@ import PC.Bytes.Random
 -- Mininmal complete definition:
 -- 'length', 'splitAt', 'toList', 'fromList', 'randomBytes'
 --
-class (Eq α, Ord α, Monoid α, Code64 α, Code16 α) ⇒ ByteArray α where
+class (Eq a, Ord a, Monoid a) => ByteArray a where
 
-    length ∷ α → Int
-    splitAt ∷ Int → α → (α, α)
-    randomBytes ∷ MonadIO μ ⇒ Int → μ α
-    toList ∷ α → [Word8]
-    fromList ∷ [Word8] → α
+    length :: a -> Int
+    splitAt :: Int -> a -> (a, a)
+    randomBytes :: MonadIO mu => Int -> mu a
+    toList :: a -> [Word8]
+    fromList :: [Word8] -> a
 
-    splitAtEnd ∷ Int → α → (α, α)
-    take ∷ Int → α → α
-    takeEnd ∷ Int → α → α
-    drop ∷ Int → α → α
-    dropEnd ∷ Int → α → α
-    empty ∷ α
+    splitAtEnd :: Int -> a -> (a, a)
+    take :: Int -> a -> a
+    takeEnd :: Int -> a -> a
+    drop :: Int -> a -> a
+    dropEnd :: Int -> a -> a
+    empty :: a
 
     -- Default implementations
     splitAtEnd i a = splitAt (length a - i) a
-    take i = fst ∘ splitAt i
-    takeEnd i = snd ∘ splitAtEnd i
-    drop i = snd ∘ splitAt i
-    dropEnd i = fst ∘ splitAtEnd i
+    take i = fst . splitAt i
+    takeEnd i = snd . splitAtEnd i
+    drop i = snd . splitAt i
+    dropEnd i = fst . splitAtEnd i
     empty = mempty
 
     {-# INLINABLE splitAtEnd #-}
@@ -88,9 +80,9 @@ class (Eq α, Ord α, Monoid α, Code64 α, Code16 α) ⇒ ByteArray α where
 -- Minimal complete defintion:
 -- 'toBytes', 'fromBytes'
 --
-class Bytes α where
-    toBytes ∷ α → BackendByteArray
-    fromBytes ∷ BackendByteArray → Either String α
+class Bytes a where
+    toBytes :: a -> BackendByteArray
+    fromBytes :: BackendByteArray -> Either String a
 
 -- | Object that can be converted to a type from a bytestring without failing.
 --
@@ -98,6 +90,18 @@ class Bytes α where
 -- and don't have any length or content constraint (type-wise). e.g. Password
 class FromBytesSafe a where
     fromBytesSafe :: BackendByteArray -> a
+
+toBytesBase64 :: Bytes b => b -> BackendByteArray
+toBytesBase64 = to64 . toBytes
+
+fromBytesBase64 :: Bytes b => BackendByteArray -> Either String b
+fromBytesBase64 b = from64 b >>= fromBytes
+
+toBytesBase16 :: Bytes b => b -> BackendByteArray
+toBytesBase16 = to16 . toBytes
+
+fromBytesBase16 :: Bytes b => BackendByteArray -> Either String b
+fromBytesBase16 b = from16 b >>= fromBytes
 
 type BackendByteArray = ByteString
 
@@ -129,31 +133,3 @@ instance Bytes B.ByteString where
 instance Bytes T.Text where
     toBytes = T.encodeUtf8
     fromBytes = either (Left . show) Right . T.decodeUtf8'
-
--- -------------------------------------------------------------------------- --
--- * Codec Instances
-
--- -------------------------------------------------------------------------- --
--- ** Base64 serialization
-
-instance Code64 B.ByteString where
-    to64 = B8.unpack ∘ urlEncode64
-    from64 = urlDecode64 ∘ B8.pack
-
--- -------------------------------------------------------------------------- --
--- ** Hex serialization
-
-instance Code16 B.ByteString where
-    to16 = B8.unpack ∘ B16.encode
-    from16 = Right ∘ fst ∘ B16.decode ∘ B8.pack
-
--- -------------------------------------------------------------------------- --
--- ** Utils
-
-urlEncode64 ∷ B.ByteString → B.ByteString
-urlEncode64 = fst . B8.spanEnd (≡ '=') . B64.encode
-
-urlDecode64 ∷ B.ByteString → Either String B.ByteString
-urlDecode64 s = let l = B.length s
-                    x = l `mod` 4
-                in  B64.decode $ s ⊕ B8.replicate (4 - if x ≡ 0 then 4 else x) '='
