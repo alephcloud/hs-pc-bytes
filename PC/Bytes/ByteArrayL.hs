@@ -45,7 +45,6 @@ import Data.Monoid
 import Data.Proxy
 
 import Prelude hiding (splitAt, length, take, drop)
-import Prelude.Unicode
 
 import PC.Bytes.ByteArray
 
@@ -65,7 +64,7 @@ instance KnownNat n ⇒ Bytes (ByteArrayL n) where
         e = toInt (Proxy ∷ Proxy n) ∷ Int
         check x = do
             let l = length x
-            if l ≡ toInt (Proxy ∷ Proxy n)
+            if l == toInt (Proxy ∷ Proxy n)
                 then Right x
                 else Left $ "wrong length: expected " ++ show e ++ " got " ++ show l
 
@@ -74,7 +73,7 @@ instance KnownNat n ⇒ Bytes (ByteArrayL n) where
     {-# INLINEABLE fromBytes #-}
 
 toInt ∷ ∀ ν proxy α. (KnownNat ν, Integral α) => proxy ν -> α
-toInt = fromIntegral ∘ natVal
+toInt = fromIntegral . natVal
 
 {-
 instance (Nat n, Code64 α, ByteArray α) ⇒ Code64 (ByteArrayL α n) where

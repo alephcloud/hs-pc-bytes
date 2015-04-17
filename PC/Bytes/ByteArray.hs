@@ -38,7 +38,6 @@ import qualified Data.ByteString.Base64.URL as B64
 import qualified Data.List as L
 
 import Prelude hiding (splitAt, length, take, drop)
-import Prelude.Unicode
 
 import PC.Bytes.Codec
 import PC.Bytes.Random
@@ -66,10 +65,10 @@ class (Eq α, Ord α, Monoid α, Code64 α, Code16 α) ⇒ ByteArray α where
 
     -- Default implementations
     splitAtEnd i a = splitAt (length a - i) a
-    take i = fst ∘ splitAt i
-    takeEnd i = snd ∘ splitAtEnd i
-    drop i = snd ∘ splitAt i
-    dropEnd i = fst ∘ splitAtEnd i
+    take i = fst . splitAt i
+    takeEnd i = snd . splitAtEnd i
+    drop i = snd . splitAt i
+    dropEnd i = fst . splitAtEnd i
     empty = mempty
 
     {-# INLINABLE splitAtEnd #-}
@@ -136,23 +135,23 @@ instance Bytes T.Text where
 -- ** Base64 serialization
 
 instance Code64 B.ByteString where
-    to64 = B8.unpack ∘ urlEncode64
-    from64 = urlDecode64 ∘ B8.pack
+    to64 = B8.unpack . urlEncode64
+    from64 = urlDecode64 . B8.pack
 
 -- -------------------------------------------------------------------------- --
 -- ** Hex serialization
 
 instance Code16 B.ByteString where
-    to16 = B8.unpack ∘ B16.encode
-    from16 = Right ∘ fst ∘ B16.decode ∘ B8.pack
+    to16 = B8.unpack . B16.encode
+    from16 = Right . fst . B16.decode . B8.pack
 
 -- -------------------------------------------------------------------------- --
 -- ** Utils
 
 urlEncode64 ∷ B.ByteString → B.ByteString
-urlEncode64 = fst . B8.spanEnd (≡ '=') . B64.encode
+urlEncode64 = fst . B8.spanEnd (== '=') . B64.encode
 
 urlDecode64 ∷ B.ByteString → Either String B.ByteString
 urlDecode64 s = let l = B.length s
                     x = l `mod` 4
-                in  B64.decode (s `mappend` B8.replicate (4 - if x ≡ 0 then 4 else x) '=')
+                in  B64.decode (s `mappend` B8.replicate (4 - if x == 0 then 4 else x) '=')

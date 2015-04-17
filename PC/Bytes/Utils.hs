@@ -60,7 +60,6 @@ import Data.Monoid
 import GHC.TypeLits
 
 import Prelude hiding (splitAt, length)
-import Prelude.Unicode
 
 import PC.Bytes.ByteArray
 import PC.Bytes.ByteArrayL
@@ -83,10 +82,10 @@ import PC.Bytes.ByteArrayL
 -- FIXME Make this a type class and avoid the partial function!
 --
 unsafeFromBytes ∷ ∀ α . Bytes α ⇒ BackendByteArray → α
-unsafeFromBytes = either (\e → error $ "Failed to interpret bitArray. This is a bug in the code: " ++ e) id ∘ fromBytes
+unsafeFromBytes = either (\e → error $ "Failed to interpret bitArray. This is a bug in the code: " ++ e) id . fromBytes
 
 unsafeFromBytesL ∷ ∀ α . (BytesL α) ⇒ ByteArrayL (ByteLengthL α) → α
-unsafeFromBytesL = either error id ∘ fromBytesL
+unsafeFromBytesL = either error id . fromBytesL
 
 -- | pad a ByteArray on the left
 --
@@ -116,8 +115,8 @@ splitHalf s = splitAt (length s `div` 2) s
 -- is one byte shorter than the second component.
 --
 splitHalfL
-    -- ∷ ∀ n m0 m1 . (m0 ≤ n, m1 ~ (n - m0), (m0 + m1) ~ n, (m0 ~ HalfF n, m1 ~ HalfC n)
-    ∷ ∀ n m0 m1 . (KnownNat m0, m0 ≤ n, m1 ~ (n - m0), (m0 + m1) ~ n, HalfF n ~ m0, HalfC n ~ m1)
+    -- ∷ ∀ n m0 m1 . (m0 <= n, m1 ~ (n - m0), (m0 + m1) ~ n, (m0 ~ HalfF n, m1 ~ HalfC n)
+    ∷ ∀ n m0 m1 . (KnownNat m0, m0 <= n, m1 ~ (n - m0), (m0 + m1) ~ n, HalfF n ~ m0, HalfC n ~ m1)
     ⇒ BackendByteArrayL n
     → (BackendByteArrayL m0, BackendByteArrayL m1)
 splitHalfL n = splitL n
@@ -199,7 +198,7 @@ pListL ∷ ByteArray BackendByteArray ⇒ Parser α → Parser [α]
 pListL p = (eof *> pure []) <|> ((:) <$> p <*> pListL p) <?> "pListL"
 
 pTake ∷ Int → Parser BackendByteArray
-pTake i = Parser $ \a → if i ≤ length a
+pTake i = Parser $ \a → if i <= length a
     then first Right $ splitAt i a
     else (Left "input too short", a)
 
@@ -213,7 +212,7 @@ pTakeL ∷ ∀ n . KnownNat n ⇒ Parser (ByteArrayL n)
 pTakeL = pEither fromBytes $ pTake (toInt (Proxy ∷ Proxy n))
 
 pTakeExcept ∷ Int → Parser BackendByteArray
-pTakeExcept i =  Parser $ \a → if i ≤ length a
+pTakeExcept i =  Parser $ \a → if i <= length a
     then first Right $ splitAtEnd i a
     else (Left "input too short", a)
 
@@ -256,12 +255,12 @@ infixl 3 <?>
 --
 isEof ∷ Parser Bool
 isEof = Parser $ \case
-    a | length a ≡ 0 → (Right True, a)
+    a | length a == 0 → (Right True, a)
       | otherwise → (Right False, a)
 
 eof ∷ Parser ()
 eof = Parser $ \case
-    a| length a ≡ 0 → (Right (), a)
+    a| length a == 0 → (Right (), a)
      | otherwise → (Left ("eof: remaining input: " ++ to16 a), a)
 
 parse ∷ Parser α → BackendByteArray → Either String α
@@ -269,15 +268,15 @@ parse = parse' ""
 
 parse' ∷ String → Parser α → BackendByteArray → Either String α
 parse' s (Parser p) a = case p a of
-    (Right r, a') → if length a' ≡ 0
+    (Right r, a') → if length a' == 0
         then Right r
         else Left $ "failed to consume all input while parsing" ++ ss ++ "; remaining bytes are: " ++ to16 a'
     (Left e, a') → Left $ "failed to parse" ++ ss ++ ": " ++ e ++ ". remaining bytes are: " ++ to16 a'
   where
-    ss = if s ≡ "" then "" else " " ++ s
+    ss = if s == "" then "" else " " ++ s
 
 instance Functor Parser where
-    fmap f (Parser p) = Parser $ first (fmap f) ∘ p
+    fmap f (Parser p) = Parser $ first (fmap f) . p
 
 instance Applicative Parser where
     pure x = Parser $ \a → (Right x, a)
