@@ -28,7 +28,6 @@ Library
       integer-gmp,
       base >= 4.7 && < 5.0,
       base-unicode-symbols >= 0.2.2.4,
-      safe >= 0.3.3,
       bytestring >= 0.10.0.2,
       byteable >= 0.1.1,
       deepseq >= 1.3,
