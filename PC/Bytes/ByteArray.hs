@@ -48,20 +48,20 @@ import PC.Bytes.Random
 -- Mininmal complete definition:
 -- 'length', 'splitAt', 'toList', 'fromList', 'randomBytes'
 --
-class (Eq α, Ord α, Monoid α, Code64 α, Code16 α) ⇒ ByteArray α where
+class (Eq a, Ord a, Monoid a, Code64 a, Code16 a) => ByteArray a where
 
-    length ∷ α → Int
-    splitAt ∷ Int → α → (α, α)
-    randomBytes ∷ MonadIO μ ⇒ Int → μ α
-    toList ∷ α → [Word8]
-    fromList ∷ [Word8] → α
+    length :: a -> Int
+    splitAt :: Int -> a -> (a, a)
+    randomBytes :: MonadIO mu => Int -> mu a
+    toList :: a -> [Word8]
+    fromList :: [Word8] -> a
 
-    splitAtEnd ∷ Int → α → (α, α)
-    take ∷ Int → α → α
-    takeEnd ∷ Int → α → α
-    drop ∷ Int → α → α
-    dropEnd ∷ Int → α → α
-    empty ∷ α
+    splitAtEnd :: Int -> a -> (a, a)
+    take :: Int -> a -> a
+    takeEnd :: Int -> a -> a
+    drop :: Int -> a -> a
+    dropEnd :: Int -> a -> a
+    empty :: a
 
     -- Default implementations
     splitAtEnd i a = splitAt (length a - i) a
@@ -86,9 +86,9 @@ class (Eq α, Ord α, Monoid α, Code64 α, Code16 α) ⇒ ByteArray α where
 -- Minimal complete defintion:
 -- 'toBytes', 'fromBytes'
 --
-class Bytes α where
-    toBytes ∷ α → BackendByteArray
-    fromBytes ∷ BackendByteArray → Either String α
+class Bytes a where
+    toBytes :: a -> BackendByteArray
+    fromBytes :: BackendByteArray -> Either String a
 
 -- | Object that can be converted to a type from a bytestring without failing.
 --
@@ -148,10 +148,10 @@ instance Code16 B.ByteString where
 -- -------------------------------------------------------------------------- --
 -- ** Utils
 
-urlEncode64 ∷ B.ByteString → B.ByteString
+urlEncode64 :: B.ByteString -> B.ByteString
 urlEncode64 = fst . B8.spanEnd (== '=') . B64.encode
 
-urlDecode64 ∷ B.ByteString → Either String B.ByteString
+urlDecode64 :: B.ByteString -> Either String B.ByteString
 urlDecode64 s = let l = B.length s
                     x = l `mod` 4
                 in  B64.decode (s `mappend` B8.replicate (4 - if x == 0 then 4 else x) '=')

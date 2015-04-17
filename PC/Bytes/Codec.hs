@@ -16,14 +16,14 @@ module PC.Bytes.Codec
 -- -------------------------------------------------------------------------- --
 -- * Base64Url serialization
 
-class Code64 α where
-    to64 ∷ α → String
-    from64 ∷ String → Either String α
+class Code64 a where
+    to64 :: a -> String
+    from64 :: String -> Either String a
 
 -- -------------------------------------------------------------------------- --
 -- * Hex serialization
 
-class Code16 α where
-    to16 ∷ α → String
-    from16 ∷ String → Either String α
+class Code16 a where
+    to16 :: a -> String
+    from16 :: String -> Either String a
 
