@@ -1,5 +1,5 @@
 Name:                pc-bytes
-Version:             0.3.0
+Version:             2015.04.0
 Synopsis:            Byte Array abstractions and utility
 description:         simple ByteArray, ByteArrayL, and some parsers
 Homepage:            https://github.com/alephcloud/hs-pc-bytes
