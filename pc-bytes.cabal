@@ -3,7 +3,7 @@ Version:             2015.4.0
 Synopsis:            Byte Array abstractions and utility
 description:         simple ByteArray, ByteArrayL, and some parsers
 Homepage:            https://github.com/alephcloud/hs-pc-bytes
-License:             AllRightsReserved
+License:             Apache-2.0
 License-file:        LICENSE
 Author:              PivotCloud
 Maintainer:          vhanquez@pivotmail.com
